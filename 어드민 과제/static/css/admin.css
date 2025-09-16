@@ -2,7 +2,7 @@
     position: absolute;
     top: 15px;
     left: 15px;
-    color: #d9534f; /* 빨간색 계열 */
+    color: #d9534f; 
     font-weight: bold;
     text-decoration: none;
 }
