@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+  <title>Admin Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+  <a href="{{ url_for('logout') }}" class="logout-link">로그아웃</a>
+  <div class="container mt-3">
+    <h3 class="mt-5 mb-3">{{ user.user_name }}님의 플레이 리스트</h3>
+    <form class="row row-cols-lg-auto g-3 align-items-center">      
+      <div class="col-12">
+        <label class="visually-hidden" for="inlineFormSelectPref">Preference</label>
+        <select class="form-select" id="inlineFormSelectPref" name="category_data_table">
+          <!-- 셀렉트요소의 name="category_data_table"은 지우거나 변경하면 안돼요 -->
+          <!-- 카테고리 셀렉트 코드를 넣어주세요 -->
+          <option selected>카테고리</option>
+          <option value="발라드">발라드</option>
+          <option value="외힙">외힙</option>
+          <option value="국힙">국힙</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="col-3">
+        <!-- input 입력창 코드를 넣어주세요 -->
+        <input type="text" class="form-control" name="search" placeholder="가수 및 제목을 입력해주세요.">
+      </div>
+      <div class="btn-group">
+        <button type="submit" class="btn btn-primary">조회</button>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSongModal">➕ 곡 추가</button>
+        <button type="button" id="darkToggle" class="btn btn-secondary">🌙 다크모드</button>
+      </div>
+      <div class="col-auto">
+        <!-- 오늘 날짜와 현재 시간 -->
+        <span id="dateTime" class="fw-bold"></span>
+      </div>
+    </form>
+
+    <div class="container mt-3">
+      <table class="table table-sm">
+        <thead>
+          <!-- 열의 속성값을 나타내는 코드를 작성해주세요 (예 : 카테고리, 브랜드, 상품명, 가격) -->
+          <tr>
+            <th>제목</th>
+            <th>가수명</th>
+            <th>유튜브 링크</th>
+            <th>카테고리</th>
+            <th>생성 시간</th>
+          </tr>
+        </thead>
+        <tbody id="product_data_Table">
+          {% for song in songs.items %}
+          <tr>
+            <td>{{ song.title }}</td>
+            <td>{{ song.singer }}</td>
+            <td><a href="{{ song.youtube_link }}" target="_blank">바로가기 ▶</a></td>
+            <td>{{ song.category }}</td>
+            <td>{{ song.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+<!-- ============================================================================= -->
+      <!-- 🎵 곡 추가 모달 -->
+      <div class="modal fade" id="addSongModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_song') }}">
+              <div class="modal-header">
+                <h5 class="modal-title">새 곡 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">제목</label>
+                  <input type="text" class="form-control" name="title" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">가수명</label>
+                  <input type="text" class="form-control" name="singer" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">유튜브 링크</label>
+                  <input type="url" class="form-control" name="youtube" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">카테고리</label>
+                  <select class="form-select" name="category" required>
+                    <option value="발라드">발라드</option>
+                    <option value="외힙">외힙</option>
+                    <option value="국힙">국힙</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">추가</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 페이지 네이션 코드를 넣어주세요 -->
+    <nav>
+      <ul class="pagination">
+        {% if songs.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('playlist', page=songs.prev_num, search=search) }}">Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><a class="page-link">Previous</a></li>
+        {% endif %}
+
+        {% for p in songs.iter_pages() %}
+          {% if p %}
+            <li class="page-item {% if p == songs.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('playlist', page=p, search=search) }}">{{ p }}</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><a class="page-link">…</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if songs.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('playlist', page=songs.next_num, search=search) }}">Next</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><a class="page-link">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+<!-- ============================================================================= -->
+  <script>
+
+    
+    document.getElementById("darkToggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+    });
+
+    
+    function updateDateTime() {
+      const now = new Date();
+      const formatted = now.toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "medium" });
+      document.getElementById("dateTime").textContent = formatted;
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
